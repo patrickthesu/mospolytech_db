@@ -21,7 +21,11 @@ class Connection():
                 "Error when connecting database, please check your envs or postgresql server is running"
             )
         # Check that database contain tables
-        self.reinstall()
+        #self.reinstall()
+    def get_groups_list (self) -> list | None:
+        self.cursor.execute('SELECT name FROM student_group;')
+        return self.cursor.fetchall()
+
     def reinstall(self) -> None:
         self.execute_file(DB_INIT_FILE)
         self.execute_file(DB_DATA_FILE)
