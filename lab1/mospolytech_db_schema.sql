@@ -1,19 +1,20 @@
 CREATE TABLE worker (
-id INT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 full_name VARCHAR (255) NOT NULL,
 email VARCHAR (255) NOT NULL UNIQUE,
 password VARCHAR (255) NOT NULL
 );
 
 CREATE TABLE faculty (
-id INT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 name VARCHAR (255) NOT NULL UNIQUE,
 dean_id INT NOT NULL,
+description TEXT,
 FOREIGN KEY (dean_id) REFERENCES worker(id)
 );
 
 CREATE TABLE department (
-id INT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 name VARCHAR (255) NOT NULL UNIQUE,
 faculy_id INT NOT NULL,
 head_of_department_id INT NOT NULL,
@@ -22,15 +23,14 @@ FOREIGN KEY (head_of_department_id) REFERENCES worker(id)
 );
 
 CREATE TABLE student_group (
-id INT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 name VARCHAR (10) NOT NULL UNIQUE,
 department_id INT NOT NULL,
-leader_id INT NOT NULL,
 FOREIGN KEY (department_id) REFERENCES department(id)
 );
 
 CREATE TABLE student (
-id INT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 full_name VARCHAR (255) NOT NULL,
 email VARCHAR (255) NOT NULL UNIQUE,
 password VARCHAR (255) NOT NULL,
