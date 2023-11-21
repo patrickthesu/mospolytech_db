@@ -26,6 +26,10 @@ class Connection():
         self.cursor.execute('SELECT name FROM student_group;')
         return self.cursor.fetchall()
 
+    def insert_student (self, full_name, email, group_id, is_laeder, password) -> list | None:
+        self.cursor.execute('SELECT name FROM student_group;')
+        return self.cursor.fetchall()
+
     def reinstall(self) -> None:
         self.execute_file(DB_INIT_FILE)
         self.execute_file(DB_DATA_FILE)

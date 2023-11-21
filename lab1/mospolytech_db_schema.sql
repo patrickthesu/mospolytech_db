@@ -32,7 +32,6 @@ FOREIGN KEY (department_id) REFERENCES department(id)
 CREATE TABLE student (
 id SERIAL PRIMARY KEY,
 full_name VARCHAR (255) NOT NULL,
-email VARCHAR (255) NOT NULL UNIQUE,
 password VARCHAR (255) NOT NULL,
 student_group_id INT NOT NULL,
 is_leader BOOLEAN NOT NULL DEFAULT FALSE,
