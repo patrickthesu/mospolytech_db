@@ -1,17 +1,30 @@
-import requests
 import json
-import io
+from random import randrange
 
-def get_students_group(name: str):
-    responce = requests.get('''https://e.mospolytech.ru/old/lk_api.php/?getStudents&search=&group=''' + name + '''&page=1&perpage=50&token=AO89rn45Jeklc7TSR8Fl4Z84EWi0%2FOQxDHllnRTDn%2F7xMTZgPEFWacFk%2BbO2lmIVpB4FZl3gw4Gl4vqwmhv0ZgAx%2BGldRn2BM7QumLDk%2BSfmN7vSFHkrUDHP%2FoKixIoai8Kb7U1HyFfIQmhkL%2FXWvbRfgoApC4LB9G8xrY0W8lk%3D''')
-    with open(f'./groups/{name}.json', 'w', encoding="utf-8") as file:
-        file.write(json.dumps(responce.json()))
+from modeltypes import Document, DocumentType, Student, StudentGroup
 
 
-def get_students_groups_list(groupList: list):
-    for group in groupList:
-        get_students_group(group)
+def document_generator() -> Document:
+    random_serial = randrange(1000, 9999)
+    random_number = randrange(100000, 999999)
+
+    return Document(
+        id=None,
+        document_type=DocumentType.russian_passport,
+        serial_number=f'{random_serial} {random_number}'
+    )
+    
 
 
-if __name__ == '__main__':
-    get_students_group('221-365')
+def students_parser(group: StudentGroup) -> None:
+    with open(filepath, 'r') as file:
+        students = json.loads(file.read())
+        for item in students['items']: 
+            student = Student(
+                id=None,
+                full_name=item['fio'],
+                student_group=group,
+                is_leader=False,
+                document=document_generator()
+            )
+            student.save()
