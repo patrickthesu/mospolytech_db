@@ -19,24 +19,21 @@ class Connection():
             logging.info("[MODELS] Database succesfully connected!")
         except Exception as err:
             logging.error(f"[MODELS] {err}")
-            raise Exception ("Connection error", 
-                "Error when connecting database, please check your envs or postgresql server is running"
+            raise Exception(
+                "Connection error",
+                "Error when connecting database, please check\
+                your envs or postgresql server is running"
             )
-        # Check that database contain tables
-        # self.reinstall()
-    def get_groups_list (self) -> list | None:
-        self.cursor.execute('SELECT id, name FROM student_group;')
-        return self.cursor.fetchall()
 
-    def insert_student (self, full_name, email, group_id, is_laeder, password) -> list | None:
-        self.cursor.execute('SELECT name FROM student_group;')
+    def get_groups_list(self) -> list | None:
+        self.cursor.execute('SELECT id, name FROM student_group;')
         return self.cursor.fetchall()
 
     def reinstall(self) -> None:
         self.execute_file(DB_INIT_FILE)
         self.execute_file(DB_DATA_FILE)
 
-    def execute_file (self, filepath):
+    def execute_file(self, filepath):
         with open(filepath) as file:
             self.cursor.execute(file.read())
             self.connection.commit()
@@ -51,6 +48,7 @@ class DocumentType(Enum):
     foreign_passport = 'Foreign passport'
     other = 'Other'
 
+
 @dataclass
 class Worker(Connection):
     id: int | None
@@ -63,7 +61,7 @@ class Worker(Connection):
 class Faculty(Connection):
     id: int | None
     name: str
-    dean: Worker 
+    dean: Worker
     description: str
 
 
@@ -81,14 +79,14 @@ class StudentGroup(Connection):
     name: str
     department: Department
 
-    def get_all (self) -> list:
+    def get_all(self) -> list:
         self.cursor.execute('SELECT * FROM student_group;')
 
         query = self.cursor.fetchall()
         columnNames = [d[0] for d in self.cursor.description]
 
         groupsList = []
-        
+
         for group in query:
             columnsDict = {}
 
@@ -103,12 +101,15 @@ class StudentGroup(Connection):
 
         return groupsList
 
+
 class Document(Connection):
     id: int | None
     document_type: DocumentType
     series_number: str
 
-    def __init__(self, id: int | None, document_type: DocumentType, series_number: str) -> None:
+    def __init__(self, id: int | None,
+                 document_type: DocumentType,
+                 series_number: str) -> None:
         super().__init__()
         self.id = id
         self.document_type = document_type
@@ -137,7 +138,9 @@ class Student(Connection):
     is_leader: bool
     document: Document
 
-    def __init__(self, id: int | None, full_name: str, student_group: StudentGroup | int, is_leader: bool, document: Document) -> None:
+    def __init__(self, id: int | None, full_name: str,
+                 student_group: StudentGroup | int,
+                 is_leader: bool, document: Document) -> None:
         super().__init__()
         self.id = id
         self.full_name = full_name
@@ -150,8 +153,8 @@ class Student(Connection):
             self.document.save()
 
         self.cursor.execute(
-            '''INSERT INTO student 
-            (full_name, student_group_id, is_leader, document_id) 
+            '''INSERT INTO student
+            (full_name, student_group_id, is_leader, document_id)
             VALUES
             (%(full_name)s, %(student_group_id)s, %(is_leader)s, %(document)s)
             RETURNING id;''',

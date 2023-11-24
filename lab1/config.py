@@ -1,7 +1,7 @@
 from os import getenv
 from pathlib import Path
 
-DB_NAME = 'polytech_db'
+DB_NAME = getenv('POSTGRES_DATABASE')
 DB_USER = getenv('POSTGRES_USER')
 DB_PASSWORD = getenv('POSTGRES_PASSWORD')
 
