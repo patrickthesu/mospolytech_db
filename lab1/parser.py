@@ -1,7 +1,7 @@
 import json
 from random import randrange
 
-from modeltypes import Document, DocumentType, Student, StudentGroup
+from models import Document, DocumentType, Student, StudentGroup
 
 
 def document_generator() -> Document:
@@ -10,21 +10,21 @@ def document_generator() -> Document:
 
     return Document(
         id=None,
-        document_type=DocumentType.russian_passport,
-        serial_number=f'{random_serial} {random_number}'
+        document_type=DocumentType.russian_passport.value,
+        series_number=f'{random_serial} {random_number}'
     )
     
 
 
-def students_parser(group: StudentGroup) -> None:
+def students_parser(group_id, group_name) -> None:
+    filepath = f'./groups/{group_name}.json'
     with open(filepath, 'r') as file:
         students = json.loads(file.read())
         for item in students['items']: 
             student = Student(
                 id=None,
                 full_name=item['fio'],
-                student_group=group,
+                student_group=group_id,
                 is_leader=False,
-                document=document_generator()
-            )
+                document=document_generator())
             student.save()

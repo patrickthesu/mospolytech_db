@@ -19,7 +19,7 @@ name VARCHAR (255) NOT NULL UNIQUE,
 faculy_id INT NOT NULL,
 head_id INT NOT NULL,
 FOREIGN KEY (faculy_id) REFERENCES faculty(id),
-FOREIGN KEY (head_of_department_id) REFERENCES worker(id)
+FOREIGN KEY (head_id) REFERENCES worker(id)
 );
 
 CREATE TABLE student_group (

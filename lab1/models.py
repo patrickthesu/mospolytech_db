@@ -23,9 +23,9 @@ class Connection():
                 "Error when connecting database, please check your envs or postgresql server is running"
             )
         # Check that database contain tables
-        #self.reinstall()
+        # self.reinstall()
     def get_groups_list (self) -> list | None:
-        self.cursor.execute('SELECT name FROM student_group;')
+        self.cursor.execute('SELECT id, name FROM student_group;')
         return self.cursor.fetchall()
 
     def insert_student (self, full_name, email, group_id, is_laeder, password) -> list | None:
@@ -44,10 +44,6 @@ class Connection():
     def __del__(self) -> None:
         self.connection.close()
         logging.info("[MODELS] Closing connection to database...")
-
-
-if __name__ == "__main__":
-    con = Connection()
 
 
 class DocumentType(Enum):
@@ -85,32 +81,49 @@ class StudentGroup(Connection):
     name: str
     department: Department
 
-    def get_all (self) -> list[StudentGroup]:
-        self.cursor.execute('SELECT name FROM student_group;')
-        return self.cursor.fetchall()
+    def get_all (self) -> list:
+        self.cursor.execute('SELECT * FROM student_group;')
 
+        query = self.cursor.fetchall()
+        columnNames = [d[0] for d in self.cursor.description]
 
+        groupsList = []
         
+        for group in query:
+            columnsDict = {}
 
+            for i, name in enumerate(columnNames):
+                columnsDict[name] = group[i]
 
-@dataclass
+            groupsList.append(StudentGroup(
+                id=columnsDict['id'],
+                name=columnsDict['name'],
+                department=columnsDict['department']
+            ))
+
+        return groupsList
+
 class Document(Connection):
     id: int | None
     document_type: DocumentType
-    serial_number: str
+    series_number: str
+
+    def __init__(self, id: int | None, document_type: DocumentType, series_number: str) -> None:
+        super().__init__()
+        self.id = id
+        self.document_type = document_type
+        self.series_number = series_number
 
     def save(self) -> None:
         self.cursor.execute(
-            '''INSERT INTO document 
-            (document_type, serial_number) 
-            VALUES
-            (:document_type, :serial_number)
+            '''INSERT INTO document
+            (document_type, series_number)
+            VALUES (%(document_type)s, %(series_number)s)
             RETURNING id;''',
             {
                 "document_type": str(self.document_type),
-                "serial_number": self.serial_number,
+                "series_number": self.series_number,
             }
-
         )
         self.connection.commit()
         self.id = self.cursor.fetchone()
@@ -120,9 +133,17 @@ class Document(Connection):
 class Student(Connection):
     id: int | None
     full_name: str
-    student_group: StudentGroup
+    student_group: StudentGroup | int
     is_leader: bool
     document: Document
+
+    def __init__(self, id: int | None, full_name: str, student_group: StudentGroup | int, is_leader: bool, document: Document) -> None:
+        super().__init__()
+        self.id = id
+        self.full_name = full_name
+        self.student_group = student_group
+        self.is_leader = is_leader
+        self.document = document
 
     def save(self) -> None:
         if not self.document.id:
@@ -132,11 +153,11 @@ class Student(Connection):
             '''INSERT INTO student 
             (full_name, student_group_id, is_leader, document_id) 
             VALUES
-            (:full_name, :student_group_id, :is_leader, :document)
+            (%(full_name)s, %(student_group_id)s, %(is_leader)s, %(document)s)
             RETURNING id;''',
             {
                 "full_name": self.full_name,
-                "student_group_id": self.student_group.id,
+                "student_group_id": self.student_group,
                 "is_leader": self.is_leader,
                 "document": self.document.id
             }
@@ -144,3 +165,7 @@ class Student(Connection):
         )
         self.connection.commit()
         self.id = self.cursor.fetchone()
+
+
+if __name__ == "__main__":
+    con = Connection()
