@@ -12,7 +12,7 @@ def get_students_group(name: str):
 
     responce = requests.get(url)
 
-    with open(BASE_DIR / f'./groups/{name}.json', 'w', encoding="utf-8") as file:
+    with open(BASE_DIR / f'./schedules/{name}.json', 'w', encoding="utf-8") as file:
         file.write(json.dumps(responce.json()))
 
 

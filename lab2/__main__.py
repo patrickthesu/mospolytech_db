@@ -1,6 +1,7 @@
 import telebot
 
 from scraper import get_students_groups_list
+from parser import schedule_parser
 from models import Connection
 from config import TELEGRAM_BOT_TOKEN
 
@@ -30,10 +31,11 @@ def echo_message(message):
 
 if __name__ == '__main__':
     conn = Connection()
-    #conn.reinstall()
+    conn.reinstall()
 
     groups_list = []
     for group in conn.get_groups_list():
-        groups_list.append(group[1])
+        schedule_parser(group[1], group[0])
+        #groups_list.append(group[1])
 
-    get_students_groups_list(groups_list)
+    #schedule_parser(group_name)
