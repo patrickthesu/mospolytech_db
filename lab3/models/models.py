@@ -276,7 +276,7 @@ class Connection():
 
     def get_schedule_list(self) -> list:
         self.cursor.execute('''
-        SELECT i.id, t.full_name, c.name as cabinet_name, u.name AS subject_name, ti.interval,  FROM schedule s
+        SELECT i.id, t.full_name, c.name as cabinet_name, u.name AS subject_name, ti.interval, day.name FROM schedule s
         JOIN schedule_item i ON s.schedule_item_id = i.id
         JOIN student_group g ON g.id=i.student_group_id
         JOIN subject u ON u.id=i.subject_id

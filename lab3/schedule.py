@@ -15,7 +15,7 @@ class scheduleManage(QWidget):
 
         self.schedule = self.connect.get_schedule_list()
 
-        self.tableWidget = tableWidget(headers = ["ID элемента", "Студенческой группа", "Предмет", "День", "Интервал"], columns = self.schedule, vertical = False)
+        self.tableWidget = tableWidget(headers = ["ID элемента", "Имя учителя", "Кабинет", "Предмет", "День", "Интервал"], columns = self.schedule, vertical = False)
         self.layout.addWidget (self.tableWidget)
 
         self.insertschdeuleItemButton = QPushButton("Добавить элемент расписания")
