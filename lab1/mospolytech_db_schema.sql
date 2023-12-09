@@ -1,6 +1,6 @@
 CREATE TABLE worker (
 id SERIAL PRIMARY KEY,
-full_name VARCHAR (255) NOT NULL,
+full_name VARCHAR (500) NOT NULL,
 email VARCHAR (255) NOT NULL UNIQUE,
 password VARCHAR (255) NOT NULL
 );
@@ -29,7 +29,7 @@ department_id INT NOT NULL,
 FOREIGN KEY (department_id) REFERENCES department(id)
 );
 
-CREATE TYPE doc_type AS ENUM ('Russian passport', 'Foreign passpor', 'Other');
+CREATE TYPE doc_type AS ENUM ('Russian passport', 'Foreign passport', 'Other');
 
 CREATE TABLE document (
 id SERIAL PRIMARY KEY,

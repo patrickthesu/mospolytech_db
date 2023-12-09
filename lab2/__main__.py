@@ -1,0 +1,235 @@
+import telebot
+from telebot import types
+from datetime import datetime
+
+from scraper import get_students_groups_list
+from parser import schedule_parser
+from models import Connection
+from config import TELEGRAM_BOT_TOKEN
+
+
+conn = Connection()
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+
+daysList = [
+    'Понедельник',
+    'Вторник',
+    'Среда',
+    'Четверг',
+    'Пятница',
+    'Суббота',
+]
+
+def split_schedule_by_subgroups(schedule: list) -> dict:
+    intervalDict = {}
+    for lesson in schedule:
+        if lesson['interval'] in intervalDict:
+            if type(intervalDict[lesson['interval']]) is list:
+                intervalDict[lesson['interval']].append(lesson)
+            else:
+                intervalDict[lesson['interval']] = [intervalDict[lesson['interval']], lesson]
+            continue
+        intervalDict[lesson['interval']] = lesson
+
+    return intervalDict
+
+
+def have_subgroups(schedule: dict) -> bool:
+    for lesson in schedule:
+        if type(schedule[lesson]) is list:
+            return True
+    return False
+
+
+def pretify_schedule(schedule: dict, day: str) -> str:
+    out = f'{day}\n\n' 
+
+    for key in schedule:
+        lesson = schedule[key]
+        if type(lesson) is list:
+            for subLesson in lesson:
+                out += f'{subLesson["subject_name"]} {subLesson["cabinet_name"]} {subLesson["interval"]} {subLesson["full_name"]}\n'
+            continue
+        out += f'{lesson["subject_name"]} {lesson["cabinet_name"]} {lesson["interval"]} {lesson["full_name"]}\n'
+    return f'{out}\n\n'
+
+def get_subgroup(schedule: dict, subgroup_number: int) -> dict:
+    subgroup_schedule = {}
+
+    for key in schedule:
+        lesson = schedule[key]
+        if type(lesson) is list:
+            subgroup_schedule[key] = lesson[subgroup_number]
+        else: 
+            subgroup_schedule[key] = lesson
+
+    return subgroup_schedule
+ 
+
+def get_defaul_markup(message) -> types.ReplyKeyboardMarkup:
+    markup = types.ReplyKeyboardMarkup()
+
+    user = conn.get_telegram_user(message.from_user.id)
+
+    if not user or not user['student_group_id'] or not user['full_name']:
+        return markup
+
+    buttonA = types.KeyboardButton('/help')
+    buttonB = types.KeyboardButton('/schedule')
+    buttonC = types.KeyboardButton('/polytech')
+    buttonD = types.KeyboardButton('/week')
+
+    markup.row(buttonA, buttonB)
+    markup.row(buttonC, buttonD)
+
+    return markup
+
+def get_schedule_markup() -> types.ReplyKeyboardMarkup:
+    markup = types.ReplyKeyboardMarkup()
+
+    daysButtons = []
+    for day in daysList:
+        daysButtons.append(types.KeyboardButton(day))
+
+    markup.row(*daysButtons)
+    markup.row('Неделя', 'Сегодня')
+
+    return markup
+
+
+def get_subgroup_manage_markup(day: str) -> types.InlineKeyboardMarkup:
+    markup = types.InlineKeyboardMarkup()
+
+    buttonA = types.InlineKeyboardButton('Группа А', callback_data=f'a_{day}')
+    buttonC = types.InlineKeyboardButton('Все', callback_data=f'all_{day}')
+    buttonB = types.InlineKeyboardButton('Группа B', callback_data=f'b_{day}')
+
+    markup.row(buttonA, buttonB)
+    markup.row(buttonC)
+
+    return markup
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle(call):
+    print("Хендлим")
+    user = conn.get_telegram_user(call.from_user.id)
+
+    subgroup, day = call.data.split("_")
+
+    if subgroup == 'a':
+        subgroup = 0
+    elif subgroup == 'b':
+        subgroup = 1
+    else:
+        subgroup = None
+
+    schedule = split_schedule_by_subgroups(conn.getDaySchedule(day, user['student_group_id']))
+    if subgroup:
+        schedule = get_subgroup(schedule, subgroup)
+                
+    bot.answer_callback_query(call.id, pretify_schedule(schedule, day))
+
+    return
+ 
+@bot.message_handler(commands=['polytech'])
+def send_polytech_link(message):
+    bot.reply_to(message, 'e.mospolytech.ru', reply_markup=get_defaul_markup(message))
+    
+
+@bot.message_handler(commands=['group'])
+def request_group_id(message):
+    bot.reply_to(message, '''Для начала в какой группе вы обучаетесь?\n\nОтвет в формате nnn-nnn где "n"-цифра.''')
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, '''Здравствуйте! Этот бот поможет вам узнать Ваше рассписание.''', reply_markup=get_defaul_markup(message))
+    if not conn.insert_telegram_user(message.from_user.id):
+        request_group_id(message)
+    
+
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    bot.reply_to(message, '''Этот бот поможет Вам узнать распиание на текущую неделю. Список актуальных команд:\n\n/help - показать это сообщение\n/start - начать работу с ботом\n/schedule - перейти к выбору расписания.\n/group - поменять группу\n/name - поменять Ваше имя\n/polytech - получить ссылку на личный кабинет\n/week - получить расписание на всю неделю.\n\nТех. поддержка - https://t.me/vasylyev_kirill''', reply_markup=get_defaul_markup(message))
+
+
+@bot.message_handler(commands=['schedule'])
+def selectSchedule(message):
+    bot.reply_to(message, '''Выберите день.''', reply_markup=get_schedule_markup())
+
+@bot.message_handler(commands=['week'])
+def week(message):
+    user = conn.get_telegram_user(message.from_user.id)
+    schedule_str = "Неделя:\n\n"
+    for day in daysList:
+        schedule = split_schedule_by_subgroups(conn.getDaySchedule(day, user['student_group_id']))
+        schedule = get_subgroup(schedule, 0)
+        schedule_str += pretify_schedule(schedule, day)
+
+    markup = get_subgroup_manage_markup('week')
+
+    if len(schedule_str) > 4095:
+        for x in range(0, len(schedule_str), 4095):
+            bot.reply_to(message, text=schedule_str[x:x+4095])
+    else:
+        bot.reply_to(message, schedule_str, reply_markup=markup)
+
+    return
+
+@bot.message_handler(func=lambda message: True)
+def echo_message(message):
+    user = conn.get_telegram_user(message.from_user.id)
+ 
+    if not user:
+        return start(message)
+
+    if not user['student_group_id']: 
+        group_id = conn.get_student_group_id(message.text)
+        if not group_id:
+            request_group_id(message)
+            return
+        conn.set_telegram_user_group(user['telegram_id'], group_id)
+        bot.reply_to(message, '''Вы успешно выбрали групу, чтобы поменять её введите команду /change_group. Теперь введите Ваше имя.''')
+        return
+
+    if not user['full_name']: 
+        conn.set_telegram_user_name(user['telegram_id'], message.text)
+        bot.reply_to(message, f'''Вы успешно обновили имя, *{message.text}*. Чтоб изменить его нужно ввести команду /change_name.''', reply_markup=get_defaul_markup(message))
+        return
+
+    if message.text in daysList:
+        for day in daysList:
+            if message.text == day:
+                schedule = split_schedule_by_subgroups(conn.getDaySchedule(day, user['student_group_id']))
+                markup = None
+                if have_subgroups(schedule):
+                    schedule = get_subgroup(schedule, 0)
+                    markup = get_subgroup_manage_markup(day)
+                
+                bot.reply_to(message, str(pretify_schedule(schedule, day)), reply_markup=markup)
+
+                return
+
+    if message.text == 'Сегодня':
+        dt = datetime.now()
+        day = daysList[dt.isoweekday()-1]
+
+        schedule = split_schedule_by_subgroups(conn.getDaySchedule(day, user['student_group_id']))
+        markup = None
+        if have_subgroups(schedule):
+            schedule = get_subgroup(schedule, 0)
+            markup = get_subgroup_manage_markup(day)
+                
+        bot.reply_to(message, str(pretify_schedule(schedule, day)), reply_markup=markup)
+        return
+
+    if message.text.strip() == 'Неделя':
+        return week(message)
+
+    if 'хочу' in message.text.strip().lower():
+        bot.send_message(message.chat.id, 'Тогда Вам сюда - e.mospolytech.ru')
+               
+    bot.reply_to(message, '''Извините, я Вас не понял.''', reply_markup=get_defaul_markup(message))
+          
+if __name__ == '__main__':
+    bot.infinity_polling()
