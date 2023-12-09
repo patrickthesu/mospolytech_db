@@ -76,6 +76,46 @@ class Connection():
         self.connection.commit()
         return
 
+    def set_telegram_user_group(self, telegram_id: int, student_group_id: int) -> bool | None:
+        user = self.get_telegram_user(telegram_id)
+        if not user: return
+        self.cursor.execute('''
+            UPDATE telegram_user SET
+            student_group_id=%(student_group_id)s
+            WHERE telegram_id=%(telegram_id)s;''',
+            {
+                'telegram_id': telegram_id,
+                'student_group_id': student_group_id,
+            }
+        )
+        self.connection.commit()
+        return True
+
+    def set_telegram_user_name(self, telegram_id: int, name: str) -> bool | None:
+        user = self.get_telegram_user(telegram_id)
+        if not user: return
+        self.cursor.execute('''
+            UPDATE telegram_user SET
+            full_name=%(full_name)s
+            WHERE telegram_id=%(telegram_id)s;''',
+            {
+                'telegram_id': telegram_id,
+                'full_name': name,
+            }
+        )
+        self.connection.commit()
+        return True
+
+
+    def get_student_group_id(self, group_name: str) -> int | None:
+        self.cursor.execute('''
+            SELECT id FROM student_group 
+            WHERE name=%(name)s;''',
+            {
+                'name': group_name 
+            })
+        id = self.cursor.fetchone()
+        return id[0] if id else None
 
     def get_teacher_id(self, full_name: str) -> int | None:
         self.cursor.execute('''
@@ -231,9 +271,9 @@ class Connection():
             self.cursor.execute(file.read())
             self.connection.commit()
 
-    def getDaySchedule(self, day_name: str, group_id: str):
+    def getDaySchedule(self, day_name: str, group_id: int) -> list:
         self.cursor.execute('''
-        SELECT u.name, t.full_name, c.name, ti.interval FROM schedule s
+        SELECT u.name AS subject_name, c.name as cabinet_name, ti.interval, t.full_name FROM schedule s
         JOIN schedule_item i ON s.schedule_item_id = i.id
         JOIN student_group g ON g.id=i.student_group_id
         JOIN subject u ON u.id=i.subject_id
@@ -241,14 +281,35 @@ class Connection():
         JOIN teacher t ON t.id=s.teacher_id
         JOIN time_interval ti ON i.time_interval_id=ti.id
         JOIN day ON i.day_id = day.id
-        WHERE g.id=%(group_id)s,
+        WHERE g.id=%(group_id)s
         AND day.name=%(day_name)s;''',
         {
             'group_id': group_id,
             'day_name': day_name 
         })
-        return self.cursor.fetchall()
-        
+        schedule = self.cursor.fetchall() 
+        if not schedule: return
+
+        out = f'{day_name}\n\n'
+
+        columnNames = [d[0] for d in self.cursor.description]
+
+        scheduleList = []
+
+        for lesson in schedule:
+            lessonDict = {}
+            for i, name in enumerate(columnNames):
+                lessonDict[name] = lesson[i]
+
+            scheduleList.append(lessonDict)
+
+        return scheduleList
+
+        #for lesson in schedule:
+        #    out += f'{lesson[0]} {lesson[1]} {lesson[2]} {lesson[3]}'
+
+        #return out
+
 
     def __del__(self) -> None:
         self.connection.close()
