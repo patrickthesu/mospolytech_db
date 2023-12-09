@@ -76,7 +76,7 @@ class Connection():
         self.connection.commit()
         return
 
-    def set_telegram_user_group(self, telegram_id: int, student_group_id: int) -> bool | None:
+    def set_telegram_user_group(self, telegram_id: int, student_group_id: int | None) -> bool | None:
         user = self.get_telegram_user(telegram_id)
         if not user: return
         self.cursor.execute('''
@@ -91,7 +91,7 @@ class Connection():
         self.connection.commit()
         return True
 
-    def set_telegram_user_name(self, telegram_id: int, name: str) -> bool | None:
+    def set_telegram_user_name(self, telegram_id: int, name: str | None) -> bool | None:
         user = self.get_telegram_user(telegram_id)
         if not user: return
         self.cursor.execute('''
@@ -265,6 +265,16 @@ class Connection():
             }
         )
         return
+
+    def get_schedule_item_list(self) -> list:
+        self.cursor.execute('''
+        SELECT i.id, g.name, u.name, day.name, ti.interval FROM schedule_item i
+        JOIN student_group g ON g.id=i.student_group_id
+        JOIN subject u ON u.id=i.subject_id
+        JOIN time_interval ti ON i.time_interval_id=ti.id
+        JOIN day ON i.day_id = day.id;''')
+
+        return self.cursor.fetchall()
 
     def execute_file(self, filepath):
         with open(filepath) as file:

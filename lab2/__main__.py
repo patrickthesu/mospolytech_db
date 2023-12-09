@@ -104,8 +104,8 @@ def get_subgroup_manage_markup(day: str) -> types.InlineKeyboardMarkup:
     buttonC = types.InlineKeyboardButton('Все', callback_data=f'all_{day}')
     buttonB = types.InlineKeyboardButton('Группа B', callback_data=f'b_{day}')
 
-    markup.row(buttonA, buttonB)
-    markup.row(buttonC)
+    #markup.row(buttonA, buttonB)
+    #markup.row(buttonC)
 
     return markup
 
@@ -137,15 +137,24 @@ def send_polytech_link(message):
     
 
 @bot.message_handler(commands=['group'])
-def request_group_id(message):
-    bot.reply_to(message, '''Для начала в какой группе вы обучаетесь?\n\nОтвет в формате nnn-nnn где "n"-цифра.''')
+def change_group(message):
+    user = conn.get_telegram_user(message.from_user.id)
+    conn.set_telegram_user_group(user['telegram_id'], None)
+    bot.reply_to(message, f'''Введит новую группу.''', reply_markup=get_defaul_markup(message)) 
+
+
+@bot.message_handler(commands=['name'])
+def change_name(message):
+    user = conn.get_telegram_user(message.from_user.id)
+    conn.set_telegram_user_name(user['telegram_id'], None)
+    bot.reply_to(message, f'''Введит новое имя.''', reply_markup=get_defaul_markup(message)) 
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.reply_to(message, '''Здравствуйте! Этот бот поможет вам узнать Ваше рассписание.''', reply_markup=get_defaul_markup(message))
     if not conn.insert_telegram_user(message.from_user.id):
-        request_group_id(message)
+        bot.reply_to(message, '''Для начала в какой группе вы обучаетесь?\n\nОтвет в формате nnn-nnn где "n"-цифра.''')
     
 
 @bot.message_handler(commands=['help'])
@@ -194,7 +203,7 @@ def echo_message(message):
 
     if not user['full_name']: 
         conn.set_telegram_user_name(user['telegram_id'], message.text)
-        bot.reply_to(message, f'''Вы успешно обновили имя, *{message.text}*. Чтоб изменить его нужно ввести команду /change_name.''', reply_markup=get_defaul_markup(message))
+        bot.reply_to(message, f'''Вы успешно обновили имя, {message.text}. Чтоб изменить его нужно ввести команду /change_name.''', reply_markup=get_defaul_markup(message))
         return
 
     if message.text in daysList:
@@ -226,7 +235,7 @@ def echo_message(message):
     if message.text.strip() == 'Неделя':
         return week(message)
 
-    if 'хочу' in message.text.strip().lower():
+    if 'хочу узнать больше' in message.text.strip().lower():
         bot.send_message(message.chat.id, 'Тогда Вам сюда - e.mospolytech.ru')
                
     bot.reply_to(message, '''Извините, я Вас не понял.''', reply_markup=get_defaul_markup(message))
