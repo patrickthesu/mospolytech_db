@@ -93,6 +93,7 @@ def get_schedule_markup() -> types.ReplyKeyboardMarkup:
 
     markup.row(*daysButtons)
     markup.row('Неделя', 'Сегодня')
+    markup.row('/help')
 
     return markup
 
@@ -159,7 +160,7 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def send_help(message):
-    bot.reply_to(message, '''Этот бот поможет Вам узнать распиание на текущую неделю. Список актуальных команд:\n\n/help - показать это сообщение\n/start - начать работу с ботом\n/schedule - перейти к выбору расписания.\n/group - поменять группу\n/name - поменять Ваше имя\n/polytech - получить ссылку на личный кабинет\n/week - получить расписание на всю неделю.\n\nТех. поддержка - https://t.me/vasylyev_kirill''', reply_markup=get_defaul_markup(message))
+    bot.reply_to(message, '''Этот бот поможет Вам узнать распиание на текущую неделю. Список актуальных команд:\n\n/help - показать это сообщение\n/start - начать работу с ботом\n/schedule - перейти к выбору расписания.\n/group - поменять группу\n/name - поменять Ваше имя\n/polytech - получить ссылку на личный кабинет\n/week - получить расписание на всю неделю.\n'хочу узнать больше' - Если вы хотите узнать больше\n\nТех. поддержка - https://t.me/vasylyev_kirill''', reply_markup=get_defaul_markup(message))
 
 
 @bot.message_handler(commands=['schedule'])
