@@ -20,17 +20,11 @@ from components.inputs import nameInput, passwordInput
 
 import models
 
-
-global DB_ERROR
-try:
-    connect = models.Connection ()
-    DB_ERROR = False
-except:
-    DB_ERROR = True
-
 class mainMenu ( QWidget ):
     def __init__ (self):
         super (QWidget, self).__init__()
+        self.connect = models.Connection()
+
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
@@ -69,45 +63,39 @@ class mainMenu ( QWidget ):
         self.exitButton.setStyleSheet ("color: rgb(255, 178, 178);")
 
     def cabinetsManage ( self ):
-        self.cabinetsManageWindow = cabinetsManage(connect)
+        self.cabinetsManageWindow = cabinetsManage(self.connect)
         self.cabinetsManageWindow.show()
 
     def teachersManage ( self ):
-        self.teacherManageWindow = teachersManage(connect)
+        self.teacherManageWindow = teachersManage(self.connect)
         self.teacherManageWindow.show()
 
     def subjectsManage ( self ):
-        self.subjectManageWindow = subjectsManage(connect)
+        self.subjectManageWindow = subjectsManage(self.connect)
         self.subjectManageWindow.show()
 
     def timeIntervalManage(self):
-        self.timeIntervalManageWindow = timeIntervalsManage(connect)
+        self.timeIntervalManageWindow = timeIntervalsManage(self.connect)
         self.timeIntervalManageWindow.show()
 
     def scheduleItemManage(self):
-        self.scheduleItemsManageWindow = scheduleItemsManage(connect)
+        self.scheduleItemsManageWindow = scheduleItemsManage(self.connect)
         self.scheduleItemsManageWindow.show()
 
     def scheduleManage(self):
-        self.scheduleManageWindow = scheduleManage(connect)
+        self.scheduleManageWindow = scheduleManage(self.connect)
         self.scheduleManageWindow.show()
 
     def getSchedule(self):
-        self.scheduleManageWindow = scheduleManage(connect)
+        self.scheduleManageWindow = scheduleManage(self.connect)
         self.scheduleManageWindow.show()
 
 
 class main ():
     def __init__ (self):
         self.app = QApplication ( sys.argv )
-        global DB_ERROR
-        if DB_ERROR:
-            self.errorWindow = errorWindow ()
-            self.errorWindow.errorTemplate ("Ошибка при подключении к базе данных.\nУведомите об этом администратора.")
-            self.errorWindow.show ()
-        else:
-            self.mw = mainMenu()
-            self.mw.show()
+        self.mw = mainMenu()
+        self.mw.show()
         self.app.exec()
 
 if __name__ == "__main__":

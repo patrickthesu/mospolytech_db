@@ -287,6 +287,20 @@ class Connection():
         ''')
         return self.cursor.fetchall()
 
+    def get_extended_schedule_list(self) -> list:
+        self.cursor.execute('''
+        SELECT i.id, t.full_name, c.name as cabinet_name, ti.interval, day.name, t.id, c.id FROM schedule s
+        JOIN schedule_item i ON s.schedule_item_id = i.id
+        JOIN student_group g ON g.id=i.student_group_id
+        JOIN subject u ON u.id=i.subject_id
+        JOIN cabinet c ON c.id=s.cabinet_id
+        JOIN teacher t ON t.id=s.teacher_id
+        JOIN time_interval ti ON i.time_interval_id=ti.id
+        JOIN day ON i.day_id = day.id;
+        ''')
+        return self.cursor.fetchall()
+
+
     def delete_time_interval(self, id: int) -> int | None:
         self.cursor.execute('''
             DELETE FROM time_interval
@@ -326,6 +340,24 @@ class Connection():
         )
         self.connection.commit()
         return
+
+    def delete_schedule(self, schedule_item_id: int, teacher_id: int, cabinet_id: int):
+        self.cursor.execute('''
+            DELETE FROM schedule
+            WHERE schedule_item_id=%(schedule_item_id)s AND
+            teacher_id=%(teacher_id)s AND
+            cabinet_id=%(cabinet_id)s;
+            ''',
+            {
+                'schedule_item_id': schedule_item_id,
+                'cabinet_id': cabinet_id,
+                'teacher_id': teacher_id,
+            }
+        )
+        self.connection.commit()
+        return
+
+
 
     def insert_schedule_item(self, day_id: int, time_interval_id: int, subject_id: int, student_group_id: int) -> int | None:
         self.cursor.execute('''
